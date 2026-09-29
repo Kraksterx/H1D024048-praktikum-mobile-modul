@@ -1,0 +1,534 @@
+ 
+Praktikum Pemrograman Mobile  
+Pertemuan 4: 
+Recomposition dan UI Lifecycle 
+ 
+ 
+ 
+Disusun oleh : 
+Azis Amirulbahar, S.P.d., M.T.I. 
+ 
+ 
+ 
+ 
+ 
+ 
+Program Studi Informatika 
+Fakultas Teknik  
+Universitas Jenderal Soedirman 
+2026 
+  
+ 2 
+DAFTAR ISI 
+DAFTAR ISI .......................................................................................................... 2 
+PENDAHULUAN .................................................................................................. 3 
+A. Pengantar ........................................................................................................... 3 
+B. Tujuan Praktikum ................................................................................................ 3 
+C. Alat dan Bahan .................................................................................................... 4 
+D. Dasar Teori .......................................................................................................... 4 
+TAHAPAN PRAKTIKUM ......................................................................................... 5 
+A. Modifikasi Permissions ....................................................................................... 5 
+B. Modifikasi Form Hubungi Kami ............................................................................ 6 
+C. Modifikasi kode pada DaftarProductScreen.kt ........................................ 17 
+D. Membuat Tampilan Detail Produk ...................................................................... 23 
+E. Navigasi di homeactivity untuk daftar produk ke detail produk ............................ 27 
+F. Menambahkan Menu Action di AppBar untuk navigasi ke hubungi kami ............... 28 
+ 
+   3 
+PENDAHULUAN 
+A. Pengantar 
+Pada pertemuan ke-4 ini, kita akan mempelajari konsep lanjutan dari Jetpack 
+Compose yaitu pengelolaan State, Recomposition, State Hoisting, dan 
+simulasi proses Asinkronus. Pada pertemuan sebelumnya, kita telah berhasil 
+membuat layout dinamis menggunakan LazyList. Namun, antarmuka aplikasi yang 
+baik tidak hanya menampilkan data statis, melainkan harus interaktif dan responsif 
+terhadap aksi pengguna seperti mengetik pada form atau mencari sebuah data. 
+ 
+“Modul pada pertemuan ke-4 dibuat lebih ringkas daripada pertemuan – pertemuan 
+sebelumnya. Peserta diharapkan  dapat secara mandiri untuk melakukan 
+implementasi suatu tampilan dari kode yang dibuat dengan mengadopsi pertemuan 
+sebelumnya, tanpa petunjuk/panduan baris kode seperti pada pertemuan 
+sebelumnya Terdapat pula implementasi komponen yang sama dengan pertemuan 
+– pertemuan sebelumnya, sehingga penjelasan kode tidak perlu disertakan pada 
+pertemuan ini dan perserta diharapkan secara mandiri untuk dapat 
+mengimplementasikannya.” 
+B.  Tujuan Praktikum 
+1. Memahami alur kerja Recomposition dan UI Lifecycle dalam antarmuka 
+deklaratif. 
+2. Menerapkan State Hoisting untuk memisahkan Stateful Composable (pengelola 
+data) dan Stateless Composable (penampil UI). 
+3. Menggunakan konsep Kotlin Lambda dan Higher-Order Functions sebagai 
+jembatan event / aksi pengguna. 
+4. Membuat antarmuka form kompleks interaktif (Dropdown/Combobox, 
+Checkbox, Image Upload) beserta validasinya. 
+5. Memahami dan menerapkan proses asinkronus (Coroutine) dasar menggunakan 
+LaunchedEffect di Compose untuk memunculkan indikator Loading. 
+   4 
+    
+Gambar 1. Hasil Akhir Praktikum 
+C. Alat dan Bahan 
+1. Perangkat keras (PC/Laptop) dengan spesifikasi minimum sesuai standar 
+Android Studio. 
+2. Android Studio (versi terbaru yang sudah mendukung Jetpack Compose secara 
+bawaan). 
+3. Emulator Android (AVD) atau perangkat fisik Android yang terhubung melalui 
+debugging (USB/Wi-Fi). 
+D. Dasar Teori 
+1. State dan Recomposition: State adalah data yang dapat berubah seiring waktu 
+dan menentukan apa yang dirender di layar (misal: teks yang sedang diketik user 
+di kolom pencarian). Recomposition adalah proses otomatis di mana Compose 
+memanggil ulang (menggambar ulang) bagian fungsi UI untuk memperbarui 
+tampilan layar saat nilai State tersebut berubah. 
+2. Unidirectional Data Flow (UDF): Pola desain standar di arsitektur modern di mana 
+data (State) selalu mengalir turun dari fungsi induk (Parent) ke fungsi anak (Child), 
+sedangkan aksi (Event) seperti klik selalu mengalir naik dari fungsi anak ke fungsi 
+induk menggunakan fungsi Lambda. 
+ 5 
+3. State Hoisting: Teknik memindahkan pengelolaan variabel State ke fungsi induk 
+(Stateful Composable) dan membiarkan fungsi UI di bawahnya murni hanya 
+menerima data tanpa menyimpan data sendiri (Stateless Composable). Hal ini 
+membuat fungsi UI lebih mudah diuji, tidak rawan bug, dan dapat digunakan 
+kembali (reusable). 
+4. LaunchedEffect & Coroutine: Lingkungan khusus di dalam Compose yang 
+memungkinkan eksekusi kode Asynchronous (berjalan di background thread). 
+Fungsi ini sangat esensial untuk operasi yang memakan waktu, seperti 
+mengunduh data dari API Server atau simulasi jeda sistem, tanpa menyebabkan 
+UI utama macet atau berhenti merespons. 
+TAHAPAN PRAKTIKUM 
+Pada bagian ini, peserta diminta untuk mengikuti tahapan – tahapan sehingga 
+menghasilkan aplikasi sederhana seperti pada gambar 1 di halaman sebelumnya. 
+ 
+A. Modifikasi Permissions 
+Android Permission (Hak Akses) adalah mekanisme keamanan utama pada sistem 
+operasi Android yang dirancang untuk melindungi privasi pengguna. Secara bawaan 
+(default), sebuah aplikasi Android berjalan di dalam “kotak pasir” (sandbox) terisolasi 
+dan sama sekali tidak memiliki akses untuk menggunakan sumber daya atau data 
+sensitif pada perangkat pengguna (seperti kamera, daftar kontak, lokasi GPS, hingga 
+memori penyimpanan file). 
+Agar aplikasi dapat mengakses sumber daya luar tersebut (dalam praktikum ini: fitur 
+Unggah Gambar yang mengharuskan aplikasi masuk dan membaca galeri foto 
+pengguna), aplikasi diwajibkan untuk mendeklarasikan permintaan izin secara 
+eksplisit di dalam sebuah file konfigurasi utama yang bernama AndroidManifest.xml. 
+Tanpa adanya deklarasi izin ini, sistem operasi Android akan memblokir paksa upaya 
+aplikasi saat mencoba membuka memori HP, yang dapat menyebabkan aplikasi crash 
+(Force Close). 
+   6 
+ 
+1. Silakan Buka File AndroidManifest.xml yang terletak di 
+app/src/main/AndroidManifest.xml. Kemudian tambahkan kode berikut di di 
+atas TAG <application> 
+ 
+Gambar 2. Modifikasi AndroidManifest.xml 
+ 
+B. Modifikasi Form Hubungi Kami 
+Pada bagian ini, kita akan m elakukan modifikasi form hubungi kami dengan 
+menerapkan lambda expression, state management, serta implementasi permissions 
+untuk membuka gambar dari galeri. 
+ 
+1. Tambahkan deklarasi variabel di dalam function HubungiKamiScreen sesuai 
+dengan gambar berikut dan lakukan import (atau tekan tombol 
+Control+Space) jika kode terdapat error yang ditandai dengan warna merah. 
+ Gambar 3. Deklarasi Variabel 
+Penjelasan kode: 
+Kode pada gambar 3 merupakan penerapan tiga konsep pada ekosistem Jetpack 
+Compose dan Kotlin yaitu: konsep State & Recomposition, penggunaan fungsi 
+remember dan rememberSaveable, serta fitur pada Kotlin bernama Property 
+Delegation. 
+ 
+fungsi mutableStateOf(...) Dalam paradigma UI deklaratif Jetpack 
+Compose, akan membuat tampilan layar bersifat reaktif terhadap perubahan data. 
+Tipe data primitif biasa seperti String atau Boolean tidak mampu memberi 
+ 7 
+sinyal ke Compose jika nilainya berubah. Oleh karena itu, perlu “membungkus” 
+data tersebut ke dalam mutableStateOf. Sehingga, setiap kali nilai di dalam 
+objek tersebut diperbarui, maka Jetpack Compose akan mendeteksi perubahan 
+tersebut secara otomatis dan memicu proses  recomposition, yaitu proses 
+menggambar ulang bagian-bagian layar yang bergantung pada variabel tersebut 
+agar selalu menampilkan data yang ter-update. 
+ 
+Namun, jika hanya menuliskan mutableStateOf("") tanpa pembungkus, nilai 
+variabel akan selalu kembali ke nilai awal saat deklarasi setiap kali layar 
+“digambar ulang". Sehingga diperlukan fungsi Remember, yang akan 
+memerintahkan Jetpack Compose untuk menyimpan dan "mengingat" nilai 
+variabel tersebut di dalam composition tre selama siklus hidup komponen 
+berlangsung. Namun, remember memiliki Batasan yaitu data akan hilang jika 
+terjadi perubahan konfigurasi perangkat (configuration change), seperti saat layar 
+ponsel diputar dari mode portrait ke landscape atau sebaliknya. Untuk mengatasi 
+hal itu, diperlukan rememberSaveable, seperti yang telah dideklasarikan pada 
+variabel problemType dan isAgreed.  Fungsi rememberSaveable akan 
+menyimpan data ke dalam mekanisme  SavedInstanceState Android, 
+sehingga data pilihan dan centang pengguna tetap aman dan tidak tereset 
+meskipun orientasi layar berubah atau proses aplikasi sempat dihentikan 
+sementara oleh sistem operasi. 
+ 
+Property Delegation (delegasi properti) dengan kata kunci by akan 
+“menyamarkan” kompleksitas pembungkus tersebut. Sehingga, kita bisa 
+melakukan set nilai dalam variabel  tanpa perlu berulang kali mengetik .value. 
+Hal serupa juga diterapkan pada  imageUri dengan anotasi tipe generik  
+mutableStateOf<Uri?>(null), yang secara eksplisit memberitahu Kotlin bahwa 
+variabel tersebut memegang rujukan lokasi berkas gambar yang boleh bernilai 
+kosong (nullable). 
+ 
+   8 
+2. Setelah mendeklarasikan variabel sesuai dengan gambar 3, tambahkan variabel 
+untuk menyimpan status validasi: 
+ 
+Gambar 4. Deklarasi Variabel 
+Penjelasan Kode: 
+ 
+Variabel isEmailValid dievaluasi menggunakan operator logika && (AND) dan 
+fungsi bawaan (standard library) Kotlin, yaitu contains("@") serta isNotBlank(). 
+Fungsi isNotBlank() memastikan bahwa teks email tidak sekadar berupa 
+deretan spasi kosong, sekaligus melengkapi pengecekan keberadaan karakter 
+"@". Pada baris berikutnya, isMessageValid menggunakan properti bawaan 
+length pada String untuk memastikan panjang karakter pesan bernilai minimal 10 
+karakter (>= 10). Kedua ekspresi ini menghasilkan tipe data primitif  Boolean 
+(true atau false) secara ringkas tanpa memerlukan blok percabangan if-else 
+yang Panjang seperti pada bahasa pemrograman lain. 
+ 
+isFormValid merupakan kombinasi dari seluruh aturan validasi formulir. 
+Variabel tersebut menggabungkan hasil validasi sebelumnya (isEmailValid 
+dan isMessageValid) dengan status persetujuan syarat ketentuan (isAgreed) 
+serta memastikan pengguna telah memilih kategori masalah yang sah , yaitu 
+nilainya tidak lagi sama dengan teks awal "Pilih Tipe Pesan" (!=). Jika dan hanya 
+jika seluruh kondisi ini terpenuhi, isFormValid akan bernilai true. 
+ 
+ 9 
+3. Masih dalam file HubungiKamiScreen.kt. , buatlah deklarasi function 
+StatelessFormHubungiKami() seperti pada gambar 3 berikut:  
+ 
+Gambar 5. Deklarasi Function StatelessFormHubungiKami() 
+Penjelasan kode: 
+ 
+Kode di atas mendefinisikan sebuah fungsi antarmuka (UI) bernama  
+StatelessFormHubungiKami.  Dalam paradigma Jetpack Compose, komponen UI 
+idealnya dipisahkan antara yang memegang status (stateful) dan yang murni hanya 
+bertugas menggambar tanpa menyimpan data internal (stateless). Konsep ini berakar 
+pada teori State Hoisting, yaitu pola desain untuk menaikkan kepemilikan data ke 
+komponen induk (parent) atau ke lapisan arsitektur yang lebih tinggi seperti 
+ViewModel (yang akan dibahas pada pert emuan berikutnya). Manfaatnya, 
+komponen StatelessFormHubungiKami menjadi sangat modular, mudah diuji 
+(testable), dan bisa digunakan ulang (reusable) di berbagai layar tanpa terikat pada 
+sumber data tertentu. 
+ 
+Penerapan State Hoisting pada parameter disusun menggunakan pola  
+Unidirectional Data Flow (UDF). Pada sistem deklaratif, aliran data bergerak satu 
+arah: data mengalir ke bawah menuju komponen UI, sedangkan aksi pengguna 
+mengalir ke atas sebagai  event. Parameter email (tipe String) dan 
+onEmailChange: (String) -> Unit adalah contoh penerapannya. Komponen 
+tersebut menerima teks email untuk ditampilkan ke layar, dan ketika pengguna 
+mengetik karakter baru di papan ketik, fungsi ini tidak mengubah nilai variabel secara 
+langsung. Fungsi tersebut justru memanggil lambda expression atau fungsi tingkat 
+tinggi (higher-order function) di Kotlin bernama onEmailChange untuk memberitahu 
+ 10 
+ke komponen induk bahwa ada perubahan data. Pola yang sama berulang pada 
+penanganan pesan, tipe kendala, kotak centang persetujuan  (isAgreed), hingga 
+pemilihan berkas gambar (imageUri yang bertipe nullable Uri?). 
+ 
+4. Deklarasikan Variabel Untuk PhotoPicker di dalam function  
+StatelessFormHubungiKami() tersebut seperti pada gambar berikut dan 
+lakukan import terhadap dependency/package yang dibutuhkan:  
+ 
+ 
+Gambar 6. Deklarasi variabel PhotoPicker 
+Penjelasan kode: 
+Fungsi rememberLauncherForActivityResult bertindak sebagai 
+“jembatan” yang mendaftarkan launcher ke sistem Android dan "mengingatnya" 
+agar tidak terbuat ulang saat layar di-refresh (recomposition).  Kode contract = 
+ActivityResultContracts.PickVisualMedia() berfungsi mengakses 
+foto tanpa perlu meminta izin akses memori (storage permission). blok onResult 
+= { uri -> onImagePicked(uri) } menerima alamat lokasi foto (Uri) 
+yang dipilih oleh pengguna, lalu langsung meneruskannya ke fungsi  
+onImagePicked untuk memperbarui tampilan layar. 
+  
+ 11 
+ 
+5. Pindahkan seluruh kode Column  beserta child-nya di function 
+HubungiKamiScreen ke dalam function StatelessFormHubungiKami() 
+ 
+Gambar 7.Blok kode yang perlu dipindah ke function StatelessFormHubungiKami() 
+6. Hapus modifier padding yang memiliki parameter PaddingValues pada 
+komponen Column 
+ 
+Gambar 8. Penghapusan baris kode pada komponen Column 
+ 12 
+7. Ganti variabel modifier seperti gambar di bawah ini yang mengacu pada 
+parameter function (huruf M kecil): 
+ 
+Gambar 9. Penggantian parameter 
+ 
+8. Ganti Nilai komponen OutlinedTextField pada parameter onValueChange 
+dengan parameter onEmailChange serta tambahkan Properti  isError & 
+SupportingText pada outlinedtext seperti gambar berikut:  
+ 
+  
+ 13 
+9. Dibawah OutlinedTextField untuk email dan spacer, tambahkan 
+Component DropdownMenuBox beserta deklarasi variabel pendukung seperti 
+gambar berikut: 
+ 
+Gambar 10. Pembuatan Components berbentuk DropDown 
+Penjelasan kode:  
+Secara ringkas, kode pada gambar 10 berfungsi untuk membangun komponen 
+dropdown menu, dengan rincian sebagai berikut: 
+• Penyimpan status dan opsi data: Variabel expanded berfungsi sebagai 
+penentu apakah daftar menu sedang terbuka atau tertutup (true/false), 
+sedangkan options menyimpan daftar pilihan yang bisa diklik. 
+ 
+• Kolom OutlinedTextField: Dibungkus oleh  
+ExposedDropdownMenuBox dan bernilai readOnly = true agar pengguna 
+tidak mengetik manual, melainkan hanya melihat nilai yang terpilih 
+ 14 
+(problemType). Modifier .menuAnchor() berfungsi mengaitkan posisi 
+kolom teks sebagai dasar tempat munculnya daftar opsi. 
+ 
+• Daftar opsi (ExposedDropdownMenu): Menampilkan daftar pilihan melalui 
+perulangan options.forEach. Ketika salah satu opsi diklik, aplikasi 
+memicu fungsi callback onProblemTypeChange untuk mengirim data opsi 
+yang dipilih ke komponen induk, lalu otomatis menutup kembali menunya 
+lewat perintah expanded = false. 
+ 
+10. Tambahkan pula komponen untuk menampilkan Uri gambar yang dipilih 
+serta checkbox seperti pada gambar berikut: 
+ 
+Gambar 11. Implementasi Kode untuk menampilkan Uri gambar serta Checkbox 
+ 
+Penjelasan kode: 
+• Tampilan konfirmasi gambar secara kondisional (if (imageUri != 
+null)): Blok tersebut mengimplementasikan logika percabangan 
+kondisional secara deklaratif yaitu komponen Card hanya akan dirender ke 
+layar jika variabel imageUri memiliki nilai (tidak null). Di dalamnya, sebuah 
+Row yang berfungsi untuk menyusun Icon berdampingan secara horizontal 
+dengan teks nama file yang diambil dari imageUri.lastPathSegment. 
+ 
+• Persetujuan (Checkbox): Disusun sejajar secara horizontal bersama label 
+teks menggunakan Row. Komponen Checkbox ini menerapkan pola stateless: 
+ 15 
+status centang dibaca langsung dari variabel isAgreed, dan setiap kali kotak 
+disentuh oleh pengguna, perubahan statusnya diteruskan ke komponen induk 
+melalui fungsi callback onAgreedChange. 
+ 
+11. Lakukan modifikasi button submit dengan mengganti nilai onClick seperti 
+gambar berikut: 
+ 
+Gambar 12. Modifikasi Tombol Submit 
+12. Lakukan pemanggilan function StatelessFormHubungiKami() pada 
+function HubungiKamiScreen() 
+ 
+Gambar 13.Pemanggilan Function StatelessFormHubungiKami 
+ 16 
+Penjelasan kode: 
+Proses tersebut merupakan implementasi/penerapan dari konsep State 
+Hoisting dan Unidirectional Data Flow (UDF) pada Jetpack Compose, yaitu 
+komponen parent mengendalikan atas seluruh status data (seperti  
+emailText, messageText, dan isAgreed) lalu meneruskannya ke bawah 
+(downward) ke dalam parameter StatelessFormHubungiKami, sekaligus 
+menyalurkan hasil validasi (isEmailValid, isFormValid) agar tampilan 
+layar selalu sinkron dengan kondisi data terkini. 
+Ketika pengguna berinteraksi dengan tampilan tersebut, misalnya mengetik 
+email atau memilih gambar, fungsi callback seperti onEmailChange = { 
+emailText = it } dan onImagePicked = { imageUri = it } akan 
+dipicu untuk memperbarui variabel penampung status lokal, yang secara 
+otomatis memicu proses recomposition. Bagian akhir pada parameter  
+onSubmit mengaitkan konsep Kotlin Coroutines melalui fungsi pembangun 
+scope.launch; blok asinkron tersebut memastikan operasi penundaan 
+(suspending function) seperti pemanggilan  
+snackbarHostState.showSnackbar dapat berjalan di latar belakang tanpa 
+memblokir alur utama antarmuka pengguna (main UI thread). 
+ 
+Lakukan pratinjau (preview) sehingga hasilnya seperti gambar di bawah ini: 
+ 
+Gambar 14.Hasil Implementasi Form Hubungi Kami 
+ 17 
+ 
+C. Modifikasi kode pada DaftarProductScreen.kt 
+Pada halaman daftar produk, kita akan menambahkan fitur Search Bar (kolom 
+pencarian) yang diintegrasikan dengan filter kategori, serta melakukan simulai 
+proses asinkronus seolah-olah aplikasi sedang mengambil data dari internet.  
+Pada bagian ini, penjelasan akan lebih sedikit dibandingkan dengan bagian 
+sebelumnya, dikarenakan pola dan konsep kode yang memiliki kesamaan. 
+Silakan ikuti langkah – langkah berikut 
+ 
+1. Tambahkan parameter pada function DaftarProdukScreen: 
+ Gambar 15. Penambahan Parameter pada function DaftarProdukScreen 
+NavController adalah objek pengendali utama dalam pustaka Jetpack 
+Navigation di Android. Ibarat nahkoda sebuah kapal, NavController 
+bertanggung jawab atas seluruh pergerakan antarlayar di dalam aplikasi. Objek 
+ini bertugas: 
+• Mengatur perpindahan layar: mengeksekusi perintah navigasi halaman  
+• Mengelola tumpukan riwayat halaman (back stack): mencatat urutan layar 
+yang pernah dibuka sehingga saat pengguna menekan tombol kembali 
+(back button), aplikasi akan harus kembali ke layar yang mana. 
+• Mengirim dan membaca argument/data: membawa data saat berpindah 
+dari satu layar ke layar lainnya. 
+  
+ 18 
+2. Deklarasi Variabel 
+Lakukan modifikasi variabel pada function DaftarProdukScreen sehingga 
+diperoleh hasil akhir sebagai berikut: 
+ 
+Gambar 16. Implementasi LaunchedEffect untuk proses asinkron 
+ 
+Konsep asinkron (asynchronous) dalam pemrograman aplikasi adalah metode 
+eksekusi di mana suatu tugas yang membutuhkan waktu , misalnya: 
+mengunduh data, membaca penyimpanan, atau menunggu waktu karena  
+terdapat proses di latar belakang tanpa menghentikan alur kerja utama 
+program.  
+Pada sistem operasi Android, alur utama (main thread) memiliki tanggung 
+jawab krusial untuk menggambar visual antarmuka dan merespons interaksi 
+sentuhan pengguna, jika tugas berat dijalankan secara sinkron (menunggu 
+hingga selesai), layar ponsel berpotensi membeku (freeze). Melalui pendekatan 
+asinkron, aplikasi tetap dapat bergerak mulus dan interaktif selagi proses yang 
+memakan waktu tersebut berjalan mandiri di belakang layar. 
+ 
+LaunchedEffect berfungsi pengendali proses asinkron di dalam komponen 
+Jetpack Compose.  Sedangkan perintah delay(1000) adalah sebuah fungsi 
+penunda waktu asinkron (suspending function) milik Kotlin Coroutines yang 
+menangguhkan eksekusi kode selama 1.000 milidetik (satu detik). Sehingga 
+ 19 
+fungsi secara keseluruhan kode tersebut adalah selama durasi satu detik, alur 
+kerja di dalam LaunchedEffect berhenti sejenak  untuk memberi waktu animasi 
+loading berputar atau menunggu pengguna selesai mengetik  tanpa 
+menggunakan seluruh sumber daya komputasi dan tanpa membuat antarmuka 
+ponsel mengalami freeze. 
+ 
+3. Membuat Function StatelessDaftarProduct() 
+ 
+Gambar 17. Membuat Function StatelessDaftarProduct() 
+ 
+4. Pindahkan Scaffold beserta seluruh childnya dari function 
+DaftarProdukScreen ke StatelessDaftarProduct() 
+ 
+Gambar 18.Memindahkan Scaffold dan seluruh child-nya 
+ 20 
+5. Tambahkan komponen OutlinedTextField ke di atas Text “Kategori 
+Produk” seperti pada gambar berikut: 
+ 
+Gambar 19. Implementasi OutlinedTextField 
+6. Ganti parameter items pada LazyRow seperti gambar di bawah ini: 
+ 
+Gambar 20. Penggantian Parameter 
+ 21 
+7. Di bawah text “Daftar Produk” tambahkan kode seperti gambar di bawah ini: 
+ 
+Gambar 21. Implementasi blok pengkondisian tampilan item 
+ 
+8. Pindahkan komponen LazyVerticalGrid ke dalam blok else: 
+ 
+Gambar 22. Memindahkan Komponen LazyVerticalGrid 
+ 22 
+9. Ganti Toast serta parameter items menjadi seperti di gambar berikut: 
+ 
+Gambar 23. Penyesuaian Kode pada blok Items 
+10. Panggil Function tersebut dari function DaftarProdukScreen() 
+ 
+Gambar 24. Pemanggilan Function DaftarProdukScreen() 
+  
+ 23 
+11. Cek di-preview, dan jalankan masing masing fiturnya, sehingga 
+diperoleh hasil sebagai berikut: 
+ 
+ 
+Gambar 25. Hasil Tampilan Modifikasi Daftar Produk 
+ 
+D. Membuat Tampilan Detail Produk 
+1. Buatlah Kotlin file baru dengan nama DetailProductScreen.kt 
+kemudian deklarasikan function dan variabel seperti gambar di bawah 
+ini: 
+ 
+Gambar 26. Deklarasi Function DetailProductScreen dan Variabel 
+  
+ 24 
+2. Buat function baru bernama StatelessDetailProduct dengan 
+detail parameter seperti pada gambar berikut: 
+ 
+Gambar 27. Deklarasi Function StatelessDetailProduct 
+3. Di dalam function StatelessDetailProduct, tambahkan 
+Scaffold yang berisi logika IF. 
+ 
+Gambar 28. Implementasi Scaffold dan Logika IF 
+4. Di blok else-if tambahkan kolom serta deklarasi komponen Image 
+seperti gambar berikut: 
+ 
+Gambar 29. Implementasi Kode pada Blok Else-IF 
+  
+ 25 
+5. Masih di dalam Column, tambahkan lagi komponen column seperti 
+gambar berikut dan isikan beberapa komponen text: 
+ 
+Gambar 30. Implementasi Kode pada Blok Else-If 
+ 
+6. Di bawah komponen text tambahkan lagi komponen berikut: 
+ 
+ 
+Gambar 31. Lanjutan Implementasi Kode pada Blok Else-If 
+ 
+  
+ 26 
+7. Di dalam function DetailProductScreen, panggil function 
+StatelessDetailProduct 
+ 
+Gambar 32. Pemanggilan Function 
+ 
+8. Jalankan previewnya dan diperoleh hasil sebagai berikut: 
+ 
+ 
+Gambar 33. Hasil Preview Detail Produk 
+  
+ 27 
+E. Navigasi di homeactivity untuk daftar produk ke detail produk 
+Pada bagian ini, kita akan mempraktikkan untuk proses navigasi antar halaman. 
+1. Buka HomeActivity.kt dan tuliskan kode berikut: 
+ 
+Gambar 34. Modifikasi Kode pada HomeActivity 
+Potongan kode ini berfungsi sebagai  peta rute navigasi untuk mengatur 
+perpindahan antarlayar di dalam aplikasi Android menggunakan Jetpack 
+Compose. Baris pertama menyiapkan variabel  navController melalui fungsi 
+rememberNavController() sebagai pengendali utama yang bertugas 
+mengarahkan pengguna berpindah layar dan mencatat riwayat halaman yang 
+telah dibuka. Komponen NavHost kemudian bertindak sebagai wadah atau 
+terminal utamanya, dengan mendeklarasikan startDestination = 
+"daftar_produk", yang berarti layar pertama yang langsung muncul saat 
+aplikasi dibuka adalah halaman daftar produk. 
+ 
+Di dalam NavHost, didefinisikan tiga tujuan rute menggunakan fungsi  
+composable. Rute pertama menampilkan halaman utama DaftarProdukScreen, 
+sedangkan rute ketiga menampilkan halaman  HubungiKamiScreen. Berbeda 
+ 28 
+pada rute kedua, yaitu "detail/{productId}", yang dirancang khusus untuk 
+menerima kiriman data angka berupa ID produk (NavType.IntType). Ketika 
+pengguna memilih produk tertentu, sistem membaca ID tersebut lewat  
+backStackEntry, mengambil angkanya (atau memberi nilai bawaan 0 jika 
+kosong), lalu meneruskannya ke layar DetailProductScreen agar halaman 
+detail dapat menampilkan data produk yang sesuai secara dinamis. 
+ 
+ 
+F. Menambahkan Menu Action di AppBar untuk navigasi ke hubungi 
+kami 
+Silakan buka Kembali file: DaftarProdukScreen.kt.  Pada bagian ini kita 
+akan mempraktikkan untuk menambahkan MenuAction seperti pada gambar di 
+bawah ini: 
+ 
+ Gambar 35. Menampilkan Menu Action 
+  
+ 29 
+ 
+1. Tambahkan 1 parameter yang bernama onContactUsClick() 
+ 
+Gambar 36. Penambahan Parameter onContactUsClick() 
+2. Pada pemanggilan function, tambahkan parameter seperti pada 
+gambar berikut: 
+ 
+Gambar 37. Penambahan Parameter onContactUsClick() 
+  
+ 30 
+3. Tambahkan kode iconButton di bawah kode ikon keranjang serta 
+tambahkan pula dropdown seperti pada gambar 38. 
+ 
+Gambar 38. Penambahan IconButton 
+ 
+ 
+ 
+ 
+ 
+JALANKAN APLIKASI TERSEBUT DI EMULATOR/PERANGKAT ANDA 

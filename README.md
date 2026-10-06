@@ -15,3 +15,7 @@ Shift Awal & Baru   : F & F
 <img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/02998512-e316-4290-9859-554bb5747f2d" />
 <img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/371c3985-b027-4f7d-8d15-7cbcc2c21737" />
 <img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/63244297-6065-449b-b367-fcf68517ab84" />
+
+## Display Pertemuan 6
+<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/5425ae7f-7f4e-4387-8ee5-afc2dfd9f1d4" />
+<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/df960664-4bcc-4725-a421-82d590ff0d37" />

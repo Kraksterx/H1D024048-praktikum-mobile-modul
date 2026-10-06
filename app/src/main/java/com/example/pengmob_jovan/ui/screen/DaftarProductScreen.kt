@@ -23,41 +23,54 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.pengmob_jovan.R
-import com.example.pengmob_jovan.data.dummy.DummyData
 import com.example.pengmob_jovan.data.model.Category
 import com.example.pengmob_jovan.data.model.Product
 import com.example.pengmob_jovan.ui.theme.PengMob_JovanTheme
-import kotlinx.coroutines.delay
+import com.example.pengmob_jovan.ui.viewmodel.ProductUiState
+import com.example.pengmob_jovan.ui.viewmodel.ProductViewModel
+import coil.compose.AsyncImage
 
 @Composable
-fun DaftarProductScreen(navController: NavController) {
+fun DaftarProductScreen(
+    navController: NavController,
+    viewModel: ProductViewModel
+) {
     var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var selectedCategoryId by remember { mutableStateOf(DummyData.categories.firstOrNull()?.id) }
+    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    
+    val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(searchQuery, selectedCategoryId) {
-        isLoading = true
-        delay(1000)
-        isLoading = false
+    when (val state = uiState) {
+        is ProductUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is ProductUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = state.message, color = MaterialTheme.colorScheme.error)
+            }
+        }
+        is ProductUiState.Success -> {
+            val filteredProducts = state.products.filter { product ->
+                val matchesCategory = selectedCategoryId == null || product.categoryId == selectedCategoryId
+                val matchesSearch = product.name.contains(searchQuery, ignoreCase = true)
+                matchesCategory && matchesSearch
+            }
+
+            StatelessDaftarProduct(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                categories = state.categories,
+                selectedCategoryId = selectedCategoryId,
+                onCategorySelected = { selectedCategoryId = it },
+                products = filteredProducts,
+                isLoading = false,
+                onProductClick = { product -> navController.navigate("detail/${product.id}") },
+                onContactUsClick = { navController.navigate("hubungi_kami") }
+            )
+        }
     }
-
-    val filteredProducts = DummyData.products.filter { product ->
-        val matchesCategory = selectedCategoryId == null || product.categoryId == selectedCategoryId
-        val matchesSearch = product.name.contains(searchQuery, ignoreCase = true)
-        matchesCategory && matchesSearch
-    }
-
-    StatelessDaftarProduct(
-        searchQuery = searchQuery,
-        onSearchQueryChange = { searchQuery = it },
-        categories = DummyData.categories,
-        selectedCategoryId = selectedCategoryId,
-        onCategorySelected = { selectedCategoryId = it },
-        products = filteredProducts,
-        isLoading = isLoading,
-        onProductClick = { product -> navController.navigate("detail/${product.id}") },
-        onContactUsClick = { navController.navigate("hubungi_kami") }
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,12 +229,13 @@ fun ProductItemCard(product: Product, onClick: () -> Unit) {
                     .aspectRatio(1f)
                     .background(Color.White)
             ) {
-                val imageRes = if (product.img == "dummy_product") R.drawable.ic_app else R.drawable.ic_app
-                Image(
-                    painter = painterResource(id = imageRes),
+                AsyncImage(
+                    model = product.img,
                     contentDescription = product.name,
                     modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentScale = ContentScale.Fit
+                    contentScale = ContentScale.Fit,
+                    placeholder = painterResource(id = R.drawable.ic_app),
+                    error = painterResource(id = R.drawable.ic_app)
                 )
                 
                 Box(
@@ -266,7 +280,7 @@ fun PreviewKategori() {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CategoryItem(category = DummyData.categories[0], isSelected = true, onClick = {})
+//            CategoryItem(category = DummyData.categories[0], isSelected = true, onClick = {})
         }
     }
 }
@@ -275,14 +289,8 @@ fun PreviewKategori() {
 @Composable
 fun PreviewProduct() {
     PengMob_JovanTheme {
-        ProductItemCard(product = DummyData.products[0], onClick = {})
+//        ProductItemCard(product = DummyData.products[0], onClick = {})
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewDarkLight() {
-    PengMob_JovanTheme {
-        DaftarProductScreen(navController = rememberNavController())
-    }
-}
+// Preview untuk DaftarProductScreen dihapus karena membutuhkan ViewModel

@@ -23,9 +23,13 @@ class HomeActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = androidx.navigation.compose.rememberNavController()
+                    val productViewModel: com.example.pengmob_jovan.ui.viewmodel.ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
                     androidx.navigation.compose.NavHost(navController = navController, startDestination = "daftar_produk") {
                         composable("daftar_produk") {
-                            DaftarProductScreen(navController = navController)
+                            DaftarProductScreen(
+                                navController = navController,
+                                viewModel = productViewModel
+                            )
                         }
                         composable(
                             route = "detail/{productId}",
@@ -36,7 +40,8 @@ class HomeActivity : ComponentActivity() {
                             val productId = backStackEntry.arguments?.getInt("productId") ?: 0
                             com.example.pengmob_jovan.ui.screen.DetailProductScreen(
                                 productId = productId,
-                                navController = navController
+                                navController = navController,
+                                viewModel = productViewModel
                             )
                         }
                         composable("hubungi_kami") {
